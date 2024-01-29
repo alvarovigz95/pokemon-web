@@ -5,20 +5,38 @@ import PokemonCard from './PokemonCard';
 
 const PokemonList: React.FC = () => {
   const [pokemonList, setPokemonList] = useState<any[]>([]);
-
+  const [favoritos, setFavoritos] = useState<any[]>([]);
+  console.log(favoritos)
+  
   useEffect(() => {
     // Llamada inicial a la API para obtener la lista de Pokémon
     // Puedes ajustar la URL de la API según tus necesidades
-    axios.get('https://pokeapi.co/api/v2/pokemon?limit=20')
+    axios.get('https://pokeapi.co/api/v2/pokemon?limit=10')
       .then(response => {
         const results = response.data.results;
         // Llenar la lista de Pokémon con datos básicos
-        const updatedPokemonList = results.map((pokemon: any) => ({
-          name: pokemon.name,
-          imageUrl: `https://pokeapi.co/media/sprites/pokemon/${pokemon.url.split('/')[6]}.png`,
-          type: 'normal', // Puedes ajustar el tipo de fondo según el tipo de Pokémon
-        }));
-        setPokemonList(updatedPokemonList);
+        let updatedPokemonList:any = [];
+        for (let item of results) {
+          axios.get(item.url)
+            .then(response => {
+              const data = response.data;
+              const pokemon = {
+                id: data.id,
+                name: item.name,
+                url: item.url,
+                imageUrl: data.sprites.other.home.front_default,
+                attack: data.stats[1].base_stat,
+                defense: data.stats[2].base_stat,
+                hp: data.stats[0].base_stat,
+                type: data.types[0].type.name
+              }
+              updatedPokemonList.push(pokemon);
+              setPokemonList(updatedPokemonList);
+            })
+            .catch(error => {
+              console.error('Error fetching Pokemon data only:', error);
+            });
+        }
       })
       .catch(error => {
         console.error('Error fetching Pokemon data:', error);
@@ -26,7 +44,17 @@ const PokemonList: React.FC = () => {
   }, []);
 
   const handleToggleFavorite = (index: number) => {
-    // Implementar la lógica para agregar/eliminar Pokémon favorito
+    console.log(`Yo te elijo! ${index}`)
+    let lsFavoritos = localStorage.getItem("favoritos")
+    console.log(lsFavoritos)
+    let lsf:any[] = [];
+    if(lsFavoritos !== null){
+      lsf = lsFavoritos.split(',');
+    }
+    let newFavoritos:any[] = [...lsf, index]
+    setFavoritos(newFavoritos)
+    console.log(newFavoritos)
+    localStorage.setItem(`favoritos`, newFavoritos.toString())
   };
 
   return (
